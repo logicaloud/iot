@@ -7,6 +7,7 @@ using System.Device.Gpio;
 using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.CompilerServices;
+using System.Device.Model;
 
 namespace Iot.Device.SenseHat
 {
@@ -31,6 +32,43 @@ namespace Iot.Device.SenseHat
         /// Number of pixels per column
         /// </summary>
         protected const int NumberOfPixelsPerColumn = 8;
+
+        /// <summary>
+        /// Lazily intialized pixel font reference. Initialized when rendering text.
+        /// </summary>
+        protected SenseHatTextFont? _pixelFont = null;
+
+        /// <summary>
+        /// Lazily initialized text render state. Initialized when rendering text.
+        /// </summary>
+        protected SenseHatTextRenderState? _textRenderState = null;
+
+        /// <summary>
+        /// Text color when rendering text. Null for "no color".
+        /// </summary>
+        protected Color _textColor = Color.Green;
+
+        /// <summary>
+        /// Text background color when rendering text. Null for "no color".
+        /// </summary>
+        protected Color _textBackgroundColor = Color.Black;
+
+        /// <summary>
+        /// Text scroll speed when the rendered text does not fit the 8x8 LED matrix
+        /// </summary>
+        protected double _textScrollPixelsPerSecond = 1;
+
+        /// <summary>
+        /// Text rotation when rendering text.
+        /// </summary>
+        protected SenseHatTextRotation _textRotation = SenseHatTextRotation.Rotate_0;
+
+        /// <summary>
+        /// Timer used for text animation (scrolling). Lazily initialized as required.
+        /// </summary>
+        protected System.Timers.Timer? _textAnimationTimer = null;
+
+        private bool _disposed = false;
 
         /// <summary>
         /// Constructs SenseHatLedMatrix instance
@@ -99,5 +137,142 @@ namespace Iot.Device.SenseHat
 
         /// <inheritdoc/>
         public abstract void Dispose();
+
+        /// <summary>
+        /// Potentially dispose text animation timer.
+        /// </summary>
+        /// <param name="disposing">True if disposing</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            if (disposing)
+            {
+                StopTextAnimationTimer();
+            }
+
+            _disposed = true;
+        }
+
+        /// <summary>
+        /// Renders text on the LED display.
+        /// </summary>
+        /// <param name="text">Text to render. Set to empty string to stop rendering text.</param>
+        [Command]
+        public void SetText(string text)
+        {
+            if (_pixelFont == null)
+            {
+                _pixelFont = new SenseHatTextFont();
+            }
+
+            _textRenderState = _pixelFont.RenderText(text);
+
+            // Render the 8x8 matrix
+            for (var x = 0; x < NumberOfPixelsPerColumn; x++)
+            {
+                for (var y = 0; y < NumberOfPixelsPerRow; y++)
+                {
+                    if (_textRenderState.IsPixelSet(x, y))
+                    {
+                        SetPixel(x, y, _textColor);
+                    }
+                    else
+                    {
+                        SetPixel(x, y, _textBackgroundColor);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Text color when rendering text.
+        /// </summary>
+        [Property]
+        public Color TextColor
+        {
+            get
+            {
+                return _textColor;
+            }
+            set
+            {
+                _textColor = value;
+            }
+        }
+
+        /// <summary>
+        /// Text background color when rendering text.
+        /// </summary>
+        [Property]
+        public Color TextBackgroundColor
+        {
+            get
+            {
+                return _textBackgroundColor;
+            }
+            set
+            {
+                _textBackgroundColor = value;
+            }
+        }
+
+        /// <summary>
+        /// Text background color when rendering text.
+        /// </summary>
+        [Property]
+        public double TextScrollPixelsPerSecond
+        {
+            get
+            {
+                return _textScrollPixelsPerSecond;
+            }
+            set
+            {
+                _textScrollPixelsPerSecond = value;
+                if (value == 0)
+                {
+                   StopTextAnimationTimer();
+                }
+                else if (_textAnimationTimer == null)
+                {
+                    // Calculate the number of milliseconds for one pixel shift
+                    var millisecondsPerPixel = _textScrollPixelsPerSecond * 1000;
+                    StartTextAnimationTimer((int)millisecondsPerPixel);
+                }
+            }
+        }
+
+        private void StartTextAnimationTimer(int intervalMs)
+        {
+            StopTextAnimationTimer();
+            _textAnimationTimer = new System.Timers.Timer();
+            _textAnimationTimer.Interval = intervalMs;
+            _textAnimationTimer.Elapsed += TextAnimationTimer_Elapsed;
+            _textAnimationTimer.Start();
+        }
+
+        private void StopTextAnimationTimer()
+        {
+            if (_textAnimationTimer != null)
+            {
+                _textAnimationTimer.Stop();
+                _textAnimationTimer.Elapsed -= TextAnimationTimer_Elapsed;
+                _textAnimationTimer.Dispose();
+                _textAnimationTimer = null;
+            }
+        }
+
+        private void TextAnimationTimer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
+        {
+            var renderState = _textRenderState;
+            if (renderState != null)
+            {
+                renderState.ScrollByOnePixel();
+            }
+        }
     }
 }
