@@ -54,7 +54,7 @@ namespace Iot.Device.SenseHat
         protected Color _textBackgroundColor = Color.Black;
 
         /// <summary>
-        /// Text rotation, counter clockwise.
+        /// Text rotation, counterclockwise.
         /// </summary>
         protected SenseHatTextRotation _textRotation = SenseHatTextRotation.Rotate_0_Degrees;
 
