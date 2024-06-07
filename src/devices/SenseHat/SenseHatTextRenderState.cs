@@ -10,6 +10,8 @@ namespace Iot.Device.SenseHat
     /// </summary>
     public class SenseHatTextRenderState
     {
+        private const int LedMatrixWidth = 8;
+
         /// <summary>
         /// The x position within the PixelMatrix where rendering to the 8x8 LEDs should begin.
         /// </summary>
@@ -18,15 +20,20 @@ namespace Iot.Device.SenseHat
         /// <summary>
         /// Construct initial render state/
         /// </summary>
-        /// <param name="pixelMatrix">Render bitmap containting text of size pixelMatrixWith * CharWidth.</param>
+        /// <param name="text">Rendered text.</param>
+        /// <param name="pixelMatrix">Render h.LedMatrix.SetText containting text of size pixelMatrixWith * CharWidth.</param>
         /// <param name="pixelMatrixWidth">Width of the bitmap</param>
-        public SenseHatTextRenderState(byte[] pixelMatrix, int pixelMatrixWidth)
+        public SenseHatTextRenderState(string text, byte[] pixelMatrix, int pixelMatrixWidth)
         {
+            Text = text;
             PixelMatrix = pixelMatrix;
             PixelMatrixWidth = pixelMatrixWidth;
-            TextColor = Color.Green;
-            TextBackgroundColor = null; // no background color
         }
+
+        /// <summary>
+        /// Rendered text
+        /// </summary>
+        public readonly string Text;
 
         /// <summary>
         /// Matrix containing the bitmap of size 'PixelMatrixWidth * 8'. Values not equal zero indicate that a pixel should be set.
@@ -39,16 +46,6 @@ namespace Iot.Device.SenseHat
         public readonly int PixelMatrixWidth;
 
         /// <summary>
-        /// Text color.
-        /// </summary>
-        public Color TextColor { get; set; }
-
-        /// <summary>
-        /// Text background color.
-        /// </summary>
-        public Color? TextBackgroundColor { get; set; }
-
-        /// <summary>
         /// Determine whether a pixel is "on"
         /// </summary>
         /// <param name="x">x position within the 8x8 matrix</param>
@@ -56,8 +53,21 @@ namespace Iot.Device.SenseHat
         /// <returns></returns>
         public bool IsPixelSet(int x, int y)
         {
-            // WindoxX may be not-zero if text is scrolled.
-            var effectiveX = (x + _horizontalScrollPosition) % PixelMatrixWidth;
+            int effectiveX;
+            if (PixelMatrixWidth < LedMatrixWidth)
+            {
+                effectiveX = x - (LedMatrixWidth - PixelMatrixWidth) / 2;
+                if (effectiveX < 0 || effectiveX >= PixelMatrixWidth)
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                // _horizontalScrollPosition may be not-zero if text is scrolled.
+                effectiveX = (x + _horizontalScrollPosition) % PixelMatrixWidth;
+            }
+
             return PixelMatrix[effectiveX + y * PixelMatrixWidth] != 0;
         }
 
@@ -66,7 +76,10 @@ namespace Iot.Device.SenseHat
         /// </summary>
         public void ScrollByOnePixel()
         {
-            _horizontalScrollPosition = (_horizontalScrollPosition + 1) % PixelMatrixWidth;
+            if (PixelMatrixWidth > LedMatrixWidth)
+            {
+                _horizontalScrollPosition = (_horizontalScrollPosition + 1) % PixelMatrixWidth;
+            }
         }
     }
 }

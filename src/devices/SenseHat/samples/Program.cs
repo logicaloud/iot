@@ -15,6 +15,14 @@ using SenseHat sh = new();
 int n = 0;
 int x = 3, y = 3;
 
+for (var i = 3; i > 0; --i)
+{
+    sh.LedMatrix.SetText(i.ToString());
+    Thread.Sleep(1000);
+}
+
+sh.LedMatrix.SetText(string.Empty);
+
 while (true)
 {
     Console.Clear();

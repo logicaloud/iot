@@ -46,7 +46,7 @@ namespace Iot.Device.SenseHat
         /// <summary>
         /// Text color when rendering text. Null for "no color".
         /// </summary>
-        protected Color _textColor = Color.Green;
+        protected Color _textColor = Color.DarkBlue;
 
         /// <summary>
         /// Text background color when rendering text. Null for "no color".
@@ -54,14 +54,14 @@ namespace Iot.Device.SenseHat
         protected Color _textBackgroundColor = Color.Black;
 
         /// <summary>
+        /// Text rotation, counter clockwise.
+        /// </summary>
+        protected SenseHatTextRotation _textRotation = SenseHatTextRotation.Rotate_0_Degrees;
+
+        /// <summary>
         /// Text scroll speed when the rendered text does not fit the 8x8 LED matrix
         /// </summary>
         protected double _textScrollPixelsPerSecond = 1;
-
-        /// <summary>
-        /// Text rotation when rendering text.
-        /// </summary>
-        protected SenseHatTextRotation _textRotation = SenseHatTextRotation.Rotate_0;
 
         /// <summary>
         /// Timer used for text animation (scrolling). Lazily initialized as required.
@@ -119,12 +119,14 @@ namespace Iot.Device.SenseHat
         /// Write colors to the device
         /// </summary>
         /// <param name="colors">Array of colors</param>
+        [Command]
         public abstract void Write(ReadOnlySpan<Color> colors);
 
         /// <summary>
         /// Fill LED matrix with a specific color
         /// </summary>
         /// <param name="color">Color to fill the device with</param>
+        [Command]
         public abstract void Fill(Color color = default(Color));
 
         /// <summary>
@@ -133,6 +135,7 @@ namespace Iot.Device.SenseHat
         /// <param name="x">X coordinate</param>
         /// <param name="y">Y coordinate</param>
         /// <param name="color">Color to be set in the specified position</param>
+        [Command]
         public abstract void SetPixel(int x, int y, Color color);
 
         /// <inheritdoc/>
@@ -164,6 +167,13 @@ namespace Iot.Device.SenseHat
         [Command]
         public void SetText(string text)
         {
+            if (string.IsNullOrEmpty(text))
+            {
+                StopTextAnimationTimer();
+                Fill(_textBackgroundColor);
+                return;
+            }
+
             if (_pixelFont == null)
             {
                 _pixelFont = new SenseHatTextFont();
@@ -171,21 +181,7 @@ namespace Iot.Device.SenseHat
 
             _textRenderState = _pixelFont.RenderText(text);
 
-            // Render the 8x8 matrix
-            for (var x = 0; x < NumberOfPixelsPerColumn; x++)
-            {
-                for (var y = 0; y < NumberOfPixelsPerRow; y++)
-                {
-                    if (_textRenderState.IsPixelSet(x, y))
-                    {
-                        SetPixel(x, y, _textColor);
-                    }
-                    else
-                    {
-                        SetPixel(x, y, _textBackgroundColor);
-                    }
-                }
-            }
+            RenderText();
         }
 
         /// <summary>
@@ -201,6 +197,7 @@ namespace Iot.Device.SenseHat
             set
             {
                 _textColor = value;
+                RenderText();
             }
         }
 
@@ -217,6 +214,7 @@ namespace Iot.Device.SenseHat
             set
             {
                 _textBackgroundColor = value;
+                RenderText();
             }
         }
 
@@ -233,16 +231,32 @@ namespace Iot.Device.SenseHat
             set
             {
                 _textScrollPixelsPerSecond = value;
-                if (value == 0)
+                var millisecondsPerPixel = 1000 / _textScrollPixelsPerSecond;
+                if (millisecondsPerPixel <= 0)
                 {
                    StopTextAnimationTimer();
                 }
-                else if (_textAnimationTimer == null)
+                else
                 {
                     // Calculate the number of milliseconds for one pixel shift
-                    var millisecondsPerPixel = _textScrollPixelsPerSecond * 1000;
                     StartTextAnimationTimer((int)millisecondsPerPixel);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Text rotation, counterclockwise.
+        /// </summary>
+        public SenseHatTextRotation TextRotation
+        {
+            get
+            {
+                return _textRotation;
+            }
+            set
+            {
+                _textRotation = value;
+                RenderText();
             }
         }
 
@@ -272,6 +286,51 @@ namespace Iot.Device.SenseHat
             if (renderState != null)
             {
                 renderState.ScrollByOnePixel();
+                RenderText();
+            }
+        }
+
+        private void RenderText()
+        {
+            if (_textRenderState == null)
+            {
+                return;
+            }
+
+            // Render the 8x8 matrix
+            for (var x = 0; x < NumberOfPixelsPerColumn; x++)
+            {
+                for (var y = 0; y < NumberOfPixelsPerRow; y++)
+                {
+                    int tx = x;
+                    int ty = y;
+                    switch (_textRotation)
+                    {
+                        case SenseHatTextRotation.Rotate_0_Degrees:
+                            break;
+                        case SenseHatTextRotation.Rotate_90_Degrees:
+                            tx = y;
+                            ty = NumberOfPixelsPerColumn - x - 1;
+                            break;
+                        case SenseHatTextRotation.Rotate_180_Degrees:
+                            tx = NumberOfPixelsPerColumn - x - 1;
+                            ty = NumberOfPixelsPerRow - y - 1;
+                            break;
+                        case SenseHatTextRotation.Rotate_270_Degrees:
+                            tx = NumberOfPixelsPerColumn - y - 1;
+                            ty = x;
+                            break;
+                    }
+
+                    if (_textRenderState.IsPixelSet(x, y))
+                    {
+                        SetPixel(tx, ty, _textColor);
+                    }
+                    else
+                    {
+                        SetPixel(tx, ty, _textBackgroundColor);
+                    }
+                }
             }
         }
     }
