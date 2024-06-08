@@ -6,7 +6,7 @@ using System.Drawing;
 namespace Iot.Device.SenseHat
 {
     /// <summary>
-    /// Helper class holding text rendering parameters
+    /// Matrix holding the rendered text. Pixels are "on" where positions in the matrix are not equal to zero.
     /// </summary>
     public class SenseHatTextRenderMatrix
     {
@@ -18,11 +18,11 @@ namespace Iot.Device.SenseHat
         private int _horizontalScrollPosition = 0;
 
         /// <summary>
-        /// Construct initial render state/
+        /// Construct the initial render matrix.
         /// </summary>
-        /// <param name="text">Rendered text.</param>
-        /// <param name="pixelMatrix">Render h.LedMatrix.SetText containting text of size pixelMatrixWith * CharWidth.</param>
-        /// <param name="pixelMatrixWidth">Width of the bitmap</param>
+        /// <param name="text">Rendered text</param>
+        /// <param name="pixelMatrix">Render matrix containting glyph pixel flags</param>
+        /// <param name="pixelMatrixWidth">Width of the matrix for all glyphs</param>
         public SenseHatTextRenderMatrix(string text, byte[] pixelMatrix, int pixelMatrixWidth)
         {
             Text = text;
@@ -41,7 +41,7 @@ namespace Iot.Device.SenseHat
         public readonly byte[] PixelMatrix;
 
         /// <summary>
-        /// The width of the rendered bitmap.
+        /// The width of the rendered matrix.
         /// </summary>
         public readonly int PixelMatrixWidth;
 

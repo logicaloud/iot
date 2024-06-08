@@ -23,7 +23,7 @@ namespace Iot.Device.SenseHat
         /// Generates a byte matrix containing the bit pattern for the rendered text.
         /// </summary>
         /// <param name="text">The text to render</param>
-        /// <returns>The initial renderMatrix including bitmap dimension.</returns>
+        /// <returns>The initial renderMatrix including matrix dimension.</returns>
         public SenseHatTextRenderMatrix RenderText(string text)
         {
             if (string.IsNullOrWhiteSpace(text))
