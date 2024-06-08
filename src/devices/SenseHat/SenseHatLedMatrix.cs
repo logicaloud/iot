@@ -69,7 +69,9 @@ namespace Iot.Device.SenseHat
         /// </summary>
         protected System.Timers.Timer? _textAnimationTimer = null;
 
-        private bool _disposed = false;
+        // Lock object to prevent i2c disposal during render.
+        // "Terminate" must be called for clear termination of text animation.
+        private object _lockTextRender = new();
 
         /// <summary>
         /// Constructs SenseHatLedMatrix instance
@@ -139,27 +141,20 @@ namespace Iot.Device.SenseHat
         [Command]
         public abstract void SetPixel(int x, int y, Color color);
 
-        /// <inheritdoc/>
-        public abstract void Dispose();
-
         /// <summary>
-        /// Potentially dispose text animation timer.
+        /// Stop animation effects if active.
         /// </summary>
-        /// <param name="disposing">True if disposing</param>
-        protected virtual void Dispose(bool disposing)
+        public void Terminate()
         {
-            if (_disposed)
+            lock (_lockTextRender)
             {
-                return;
-            }
-
-            if (disposing)
-            {
+                _textRenderState = null;
                 StopTextAnimationTimer();
             }
-
-            _disposed = true;
         }
+
+        /// <inheritdoc/>
+        public abstract void Dispose();
 
         /// <summary>
         /// Renders text on the LED display.
@@ -310,43 +305,46 @@ namespace Iot.Device.SenseHat
 
         private void RenderText()
         {
-            if (_textRenderState == null)
+            lock (_lockTextRender)
             {
-                return;
-            }
-
-            // Render the 8x8 matrix
-            for (var x = 0; x < NumberOfPixelsPerColumn; x++)
-            {
-                for (var y = 0; y < NumberOfPixelsPerRow; y++)
+                if (_textRenderState == null)
                 {
-                    int tx = x;
-                    int ty = y;
-                    switch (_textRotation)
-                    {
-                        case SenseHatTextRotation.Rotate_0_Degrees:
-                            break;
-                        case SenseHatTextRotation.Rotate_90_Degrees:
-                            tx = y;
-                            ty = NumberOfPixelsPerColumn - x - 1;
-                            break;
-                        case SenseHatTextRotation.Rotate_180_Degrees:
-                            tx = NumberOfPixelsPerColumn - x - 1;
-                            ty = NumberOfPixelsPerRow - y - 1;
-                            break;
-                        case SenseHatTextRotation.Rotate_270_Degrees:
-                            tx = NumberOfPixelsPerColumn - y - 1;
-                            ty = x;
-                            break;
-                    }
+                    return;
+                }
 
-                    if (_textRenderState.IsPixelSet(x, y))
+                // Render the 8x8 matrix
+                for (var x = 0; x < NumberOfPixelsPerColumn; x++)
+                {
+                    for (var y = 0; y < NumberOfPixelsPerRow; y++)
                     {
-                        SetPixel(tx, ty, _textColor);
-                    }
-                    else
-                    {
-                        SetPixel(tx, ty, _textBackgroundColor);
+                        int tx = x;
+                        int ty = y;
+                        switch (_textRotation)
+                        {
+                            case SenseHatTextRotation.Rotate_0_Degrees:
+                                break;
+                            case SenseHatTextRotation.Rotate_90_Degrees:
+                                tx = y;
+                                ty = NumberOfPixelsPerColumn - x - 1;
+                                break;
+                            case SenseHatTextRotation.Rotate_180_Degrees:
+                                tx = NumberOfPixelsPerColumn - x - 1;
+                                ty = NumberOfPixelsPerRow - y - 1;
+                                break;
+                            case SenseHatTextRotation.Rotate_270_Degrees:
+                                tx = NumberOfPixelsPerColumn - y - 1;
+                                ty = x;
+                                break;
+                        }
+
+                        if (_textRenderState.IsPixelSet(x, y))
+                        {
+                            SetPixel(tx, ty, _textColor);
+                        }
+                        else
+                        {
+                            SetPixel(tx, ty, _textBackgroundColor);
+                        }
                     }
                 }
             }

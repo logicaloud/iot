@@ -160,14 +160,5 @@ namespace Iot.Device.SenseHat
             _i2c?.Dispose();
             _i2c = null!;
         }
-
-        /// <summary>
-        /// Dispose resources in the base class.
-        /// </summary>
-        /// <param name="disposing">True if disposing.</param>
-        protected override void Dispose(bool disposing)
-        {
-            base.Dispose(disposing);
-        }
     }
 }
