@@ -70,7 +70,7 @@ namespace Iot.Device.SenseHat
         protected System.Timers.Timer? _textAnimationTimer = null;
 
         // Lock object to prevent i2c disposal during render.
-        // "Terminate" must be called for clear termination of text animation.
+        // "Terminate" must be called for clean termination of text animation.
         private object _lockTextRender = new();
 
         /// <summary>
