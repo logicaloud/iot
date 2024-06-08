@@ -182,6 +182,8 @@ namespace Iot.Device.SenseHat
             _textRenderState = _pixelFont.RenderText(text);
 
             RenderText();
+
+            StartOrStopTextScrolling();
         }
 
         /// <summary>
@@ -231,16 +233,7 @@ namespace Iot.Device.SenseHat
             set
             {
                 _textScrollPixelsPerSecond = value;
-                var millisecondsPerPixel = 1000 / _textScrollPixelsPerSecond;
-                if (millisecondsPerPixel <= 0)
-                {
-                   StopTextAnimationTimer();
-                }
-                else
-                {
-                    // Calculate the number of milliseconds for one pixel shift
-                    StartTextAnimationTimer((int)millisecondsPerPixel);
-                }
+                StartOrStopTextScrolling();
             }
         }
 
@@ -260,11 +253,34 @@ namespace Iot.Device.SenseHat
             }
         }
 
+        private void StartOrStopTextScrolling()
+        {
+            var renderState = _textRenderState;
+            int millisecondsPerPixel;
+            if (renderState == null || renderState.Text.Length == 0 || _textScrollPixelsPerSecond <= 0)
+            {
+                millisecondsPerPixel = 0;
+            }
+            else
+            {
+                millisecondsPerPixel = (int)(1000 / _textScrollPixelsPerSecond);
+            }
+
+            if (millisecondsPerPixel <= 0)
+            {
+                StopTextAnimationTimer();
+            }
+            else
+            {
+                // Calculate the number of milliseconds for one pixel shift
+                StartTextAnimationTimer((int)millisecondsPerPixel);
+            }
+        }
+
         private void StartTextAnimationTimer(int intervalMs)
         {
             StopTextAnimationTimer();
-            _textAnimationTimer = new System.Timers.Timer();
-            _textAnimationTimer.Interval = intervalMs;
+            _textAnimationTimer = new System.Timers.Timer(intervalMs);
             _textAnimationTimer.Elapsed += TextAnimationTimer_Elapsed;
             _textAnimationTimer.Start();
         }
@@ -283,7 +299,7 @@ namespace Iot.Device.SenseHat
         private void TextAnimationTimer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
         {
             var renderState = _textRenderState;
-            if (renderState != null)
+            if (renderState != null && renderState.Text.Length > 1)
             {
                 renderState.ScrollByOnePixel();
                 RenderText();

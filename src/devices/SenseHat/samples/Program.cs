@@ -12,8 +12,6 @@ using UnitsNet;
 var defaultSeaLevelPressure = WeatherHelper.MeanSeaLevel;
 
 using SenseHat sh = new();
-int n = 0;
-int x = 3, y = 3;
 
 for (var i = 3; i > 0; --i)
 {
@@ -22,6 +20,9 @@ for (var i = 3; i > 0; --i)
 }
 
 sh.LedMatrix.SetText(string.Empty);
+
+int n = 0;
+int x = 3, y = 3;
 
 while (true)
 {

@@ -53,9 +53,15 @@ namespace Iot.Device.SenseHat
         /// <returns></returns>
         public bool IsPixelSet(int x, int y)
         {
+            if (PixelMatrixWidth == 0)
+            {
+                return false;
+            }
+
             int effectiveX;
             if (PixelMatrixWidth < LedMatrixWidth)
             {
+                // Center letter within LED matrix
                 effectiveX = x - (LedMatrixWidth - PixelMatrixWidth) / 2;
                 if (effectiveX < 0 || effectiveX >= PixelMatrixWidth)
                 {
