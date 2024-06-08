@@ -8,7 +8,7 @@ namespace Iot.Device.SenseHat
     /// <summary>
     /// Helper class holding text rendering parameters
     /// </summary>
-    public class SenseHatTextRenderState
+    public class SenseHatTextRenderMatrix
     {
         private const int LedMatrixWidth = 8;
 
@@ -23,7 +23,7 @@ namespace Iot.Device.SenseHat
         /// <param name="text">Rendered text.</param>
         /// <param name="pixelMatrix">Render h.LedMatrix.SetText containting text of size pixelMatrixWith * CharWidth.</param>
         /// <param name="pixelMatrixWidth">Width of the bitmap</param>
-        public SenseHatTextRenderState(string text, byte[] pixelMatrix, int pixelMatrixWidth)
+        public SenseHatTextRenderMatrix(string text, byte[] pixelMatrix, int pixelMatrixWidth)
         {
             Text = text;
             PixelMatrix = pixelMatrix;

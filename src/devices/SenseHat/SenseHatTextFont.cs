@@ -7,7 +7,7 @@ using System.Collections.Generic;
 namespace Iot.Device.SenseHat
 {
     /// <summary>
-    /// Implementation of a proportional pixel font for a 8x8 bit display matrix
+    /// 5x8 font adaptor to render font glyphs into the text render matrix.
     /// </summary>
     public class SenseHatTextFont
     {
@@ -23,13 +23,13 @@ namespace Iot.Device.SenseHat
         /// Generates a byte matrix containing the bit pattern for the rendered text.
         /// </summary>
         /// <param name="text">The text to render</param>
-        /// <returns>The initial renderstate including bitmap dimension</returns>
-        public SenseHatTextRenderState RenderText(string text)
+        /// <returns>The initial renderMatrix including bitmap dimension.</returns>
+        public SenseHatTextRenderMatrix RenderText(string text)
         {
             if (string.IsNullOrWhiteSpace(text))
             {
                 // nothing to render
-                return new SenseHatTextRenderState(text, new byte[0], 0);
+                return new SenseHatTextRenderMatrix(text, new byte[0], 0);
             }
 
             if (text.Length > MaxTextLength)
@@ -87,7 +87,7 @@ namespace Iot.Device.SenseHat
                 x += _font.Width + CharGap;
             }
 
-            return new SenseHatTextRenderState(text, matrix, renderWidth);
+            return new SenseHatTextRenderMatrix(text, matrix, renderWidth);
         }
     }
 }

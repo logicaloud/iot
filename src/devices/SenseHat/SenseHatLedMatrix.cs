@@ -42,7 +42,7 @@ namespace Iot.Device.SenseHat
         /// <summary>
         /// Lazily initialized text render state. Initialized when rendering text.
         /// </summary>
-        protected SenseHatTextRenderState? _textRenderState = null;
+        protected SenseHatTextRenderMatrix? _textRenderMatrix = null;
 
         /// <summary>
         /// Text color when rendering text. Null for "no color".
@@ -148,7 +148,7 @@ namespace Iot.Device.SenseHat
         {
             lock (_lockTextRender)
             {
-                _textRenderState = null;
+                _textRenderMatrix = null;
                 StopTextAnimationTimer();
             }
         }
@@ -175,7 +175,7 @@ namespace Iot.Device.SenseHat
                 _pixelFont = new SenseHatTextFont();
             }
 
-            _textRenderState = _pixelFont.RenderText(text);
+            _textRenderMatrix = _pixelFont.RenderText(text);
 
             RenderText();
 
@@ -252,9 +252,9 @@ namespace Iot.Device.SenseHat
 
         private void StartOrStopTextScrolling()
         {
-            var renderState = _textRenderState;
+            var renderMatrix = _textRenderMatrix;
             int millisecondsPerPixel;
-            if (renderState == null || renderState.Text.Length == 0 || _textScrollPixelsPerSecond <= 0)
+            if (renderMatrix == null || renderMatrix.Text.Length == 0 || _textScrollPixelsPerSecond <= 0)
             {
                 millisecondsPerPixel = 0;
             }
@@ -295,10 +295,10 @@ namespace Iot.Device.SenseHat
 
         private void TextAnimationTimer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
         {
-            var renderState = _textRenderState;
-            if (renderState != null && renderState.Text.Length > 1)
+            var renderMatrix = _textRenderMatrix;
+            if (renderMatrix != null && renderMatrix.Text.Length > 1)
             {
-                renderState.ScrollByOnePixel();
+                renderMatrix.ScrollByOnePixel();
                 RenderText();
             }
         }
@@ -307,7 +307,7 @@ namespace Iot.Device.SenseHat
         {
             lock (_lockTextRender)
             {
-                if (_textRenderState == null)
+                if (_textRenderMatrix == null)
                 {
                     return;
                 }
@@ -337,7 +337,7 @@ namespace Iot.Device.SenseHat
                                 break;
                         }
 
-                        if (_textRenderState.IsPixelSet(x, y))
+                        if (_textRenderMatrix.IsPixelSet(x, y))
                         {
                             SetPixel(tx, ty, _textColor);
                         }
