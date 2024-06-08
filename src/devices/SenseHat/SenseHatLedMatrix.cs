@@ -14,6 +14,7 @@ namespace Iot.Device.SenseHat
     /// <summary>
     /// Base class for SenseHAT LED matrix
     /// </summary>
+    [Interface("SenseHat LED Matrix")]
     public abstract class SenseHatLedMatrix : IDisposable
     {
         /// <summary>
@@ -240,6 +241,7 @@ namespace Iot.Device.SenseHat
         /// <summary>
         /// Text rotation, counterclockwise.
         /// </summary>
+        [Property]
         public SenseHatTextRotation TextRotation
         {
             get
